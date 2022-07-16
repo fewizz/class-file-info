@@ -1,0 +1,15 @@
+-std=c++20
+-Wall
+-Wextra
+-Wno-undefined-internal
+-Wno-undefined-inline
+-Wno-unused-function
+-fno-exceptions
+-nostdinc++
+-ftemplate-backtrace-limit=0
+-fuse-ld=lld
+-I../core/include
+-I../class-file/include
+-fmodules
+-Xclang -fimplicit-module-maps
+-Xclang -fprebuilt-module-path=./build
