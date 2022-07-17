@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 template<typename Type>
-static void print_instructions(Type x) {
+static void print_instruction(Type x) {
 	using namespace class_file::code::instruction;
 
 	on_scope_exit new_line_on_scope_exit{[](){
