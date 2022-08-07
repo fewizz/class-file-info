@@ -1,8 +1,8 @@
 #pragma once
 
-#include <core/meta/elements/one_of.hpp>
-#include <core/meta/elements/none.hpp>
-#include <class/file/constant.hpp>
+#include <elements/one_of.hpp>
+#include <elements/none.hpp>
+#include <class_file/constant.hpp>
 
 using const_pool_entry_base_type = elements::one_of<
 	elements::none,

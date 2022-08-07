@@ -1,14 +1,14 @@
 #pragma once
 
 #include "abort.hpp"
-#include <class/file/code/instruction.hpp>
-#include <core/on_scope_exit.hpp>
-#include <core/loop_action.hpp>
+#include <class_file/attribute/code/instruction.hpp>
+#include <on_scope_exit.hpp>
+#include <loop_action.hpp>
 #include <stdio.h>
 
 template<typename Type>
 static void print_instruction(Type x) {
-	using namespace class_file::code::instruction;
+	using namespace class_file::attribute::code::instruction;
 
 	on_scope_exit new_line_on_scope_exit{[](){
 		putchar('\n');
@@ -43,15 +43,15 @@ static void print_instruction(Type x) {
 
 	else if constexpr (same_as<Type, ldc>) {
 		fputs("ldc ", stdout);
-		printf("%hhu", x.index);
+		printf("%hhu", (uint8) x.index);
 	}
 	else if constexpr (same_as<Type, ldc_w>) {
 		fputs("ldc_w ", stdout);
-		printf("%hu", x.index);
+		printf("%hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, ldc_2_w>) {
 		fputs("ldc_2_w ", stdout);
-		printf("%hu", x.index);
+		printf("%hu", (uint16) x.index);
 	}
 
 	else if constexpr (same_as<Type, i_load>) {
@@ -314,46 +314,46 @@ static void print_instruction(Type x) {
 	}
 
 	else if constexpr (same_as<Type, get_static>) {
-		printf("get_static %hu", x.index);
+		printf("get_static %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, put_static>) {
-		printf("put_static %hu", x.index);
+		printf("put_static %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, get_field>) {
-		printf("get_field %hu", x.index);
+		printf("get_field %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, put_field>) {
-		printf("put_field %hu", x.index);
+		printf("put_field %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_virtual>) {
-		printf("invoke_virtual %hu", x.index);
+		printf("invoke_virtual %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_special>) {
-		printf("invoke_special %hu", x.index);
+		printf("invoke_special %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_static>) {
-		printf("invoke_static %hu", x.index);
+		printf("invoke_static %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_interface>) {
-		printf("invoke_interface %hu %hhu", x.index, x.count);
+		printf("invoke_interface %hu %hhu", (uint16) x.index, x.count);
 	}
 	else if constexpr (same_as<Type, invoke_dynamic>) {
-		printf("invoked_ynamic %hu", x.index);
+		printf("invoked_ynamic %hu", (uint16) x.index);
 	}
-	else if constexpr (same_as<Type, _new>) printf("new %hu", x.index);
+	else if constexpr (same_as<Type, _new>) printf("new %hu", (uint16) x.index);
 	else if constexpr (same_as<Type, new_array>) {
 		printf("new_array %hhu", x.type);
 	}
 	else if constexpr (same_as<Type, a_new_array>) {
-		printf("a_new_array %hu", x.index);
+		printf("a_new_array %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, array_length>) printf("array_length");
 	else if constexpr (same_as<Type, a_throw>) printf("a_throw");
 	else if constexpr (same_as<Type, check_cast>) {
-		printf("check_cast %hu", x.index);
+		printf("check_cast %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, instance_of>) {
-		printf("instance_of %hu", x.index);
+		printf("instance_of %hu", (uint16) x.index);
 	}
 	else if constexpr (same_as<Type, monitor_enter>) {
 		fputs("monitor_enter", stdout);

@@ -1,8 +1,6 @@
 #if 0
 
-d=`realpath ${BASH_SOURCE[0]}`
-d=`dirname ${d}`
-root=`realpath ${d}/../`
+root=$(dirname `realpath ${BASH_SOURCE[0]}`)/../
 
 mkdir -p ${root}/build
 
@@ -15,7 +13,7 @@ if clang++ \
 	-I ${root}/../core/include \
 	-I ${root}/../class-file/include \
 	-o ${root}/build/class-file-info \
-	${d}/class_file_info.cpp
+	${root}/src/class_file_info.cpp
 then
 	${root}/build/class-file-info $@
 fi
@@ -27,9 +25,10 @@ exit 0
 #include "print_instruction.hpp"
 #include "print_constant_pool_entry.hpp"
 
-#include <class/file/reader.hpp>
-#include <core/on_scope_exit.hpp>
-#include <core/c_string.hpp>
+#include <class_file/reader.hpp>
+#include <on_scope_exit.hpp>
+#include <c_string.hpp>
+
 #include <stdio.h>
 
 extern "C" void* __cdecl malloc(nuint size);
@@ -44,8 +43,6 @@ void read_code_attribute(
 
 	auto [code_reader, max_locals] = max_locals_reader();
 	printf("max locals: %d\n", max_locals);
-
-	using namespace class_file::code::instruction;
 
 	code_reader([]<typename Type>(Type x, auto) {
 		print_instruction(x);
@@ -76,40 +73,43 @@ int main(int argc, const char** argv) {
 
 	using namespace class_file;
 
-	reader read_magic{ data };
-	auto [read_version, is_there_any_magic] = read_magic();
+	reader reader{ data };
+	auto [is_there_any_magic, version_reader] =
+		reader.check_for_magic_and_get_version_reader();
 
 	if(!is_there_any_magic) {
 		fputs("no magic here...", stderr);
 		return 1;
 	}
 
-	auto [read_constant_pool, version0] = read_version();
+	auto [version0, constant_pool_reader] =
+		version_reader.read_and_get_constant_pool_reader();
 	class_file::version version = version0;
 	printf("version: %hu.%hu\n", version.major, version.minor);
 
-	uint16 constant_pool_size = read_constant_pool.entries_count();
+	uint16 constant_pool_size = constant_pool_reader.entries_count();
 	const_pool_entry const_pool[constant_pool_size];
 
 	nuint entry_index = 0;
-	auto access_flags_reader = read_constant_pool(
-		[&]<typename Type>(Type x) {
-			if constexpr(
-				!same_as<Type, constant::unknown> &&
-				!same_as<Type, constant::skip>
-			) {
-				const_pool[entry_index] = x;
+	auto access_flags_reader =
+		constant_pool_reader.read_and_get_access_flags_reader(
+			[&]<typename Type>(Type x) {
+				if constexpr(
+					!same_as<Type, constant::unknown> &&
+					!same_as<Type, constant::skip>
+				) {
+					const_pool[entry_index] = x;
+				}
+				++entry_index;
 			}
-			++entry_index;
-		}
-	);
+		);
 
 	auto entry = [&](uint16 index) { return const_pool[index - 1]; };
 	auto _class = [&](uint16 index) {
 		return entry(index).get<constant::_class>();
 	};
 	auto utf8 = [&](uint16 index) {
-		return const_pool[index - 1].get<constant::utf8>();
+		return entry(index).get<constant::utf8>();
 	};
 
 	fputs("constant pool:\n", stdout);
@@ -120,54 +120,63 @@ int main(int argc, const char** argv) {
 		e.view([&]<typename Type>(Type x) {
 			++entry_index;
 			if constexpr (!same_as<Type, elements::none>) {
-				printf("\t[%d] ", entry_index);
+				printf("\t[%u] ", (uint32) entry_index);
 			}
 			print_constant_pool_entry(x, entry);
 		});
 	}
 
-	auto [read_this, access_flags] = access_flags_reader();
-	printf("access flags: 0x%.4x\n", access_flags);
+	auto [access_flags, this_reader] =
+		access_flags_reader.read_and_get_this_class_reader();
+	printf("access flags: 0x%.4x\n", (uint16) access_flags);
 
-	auto [read_super, this_index] = read_this();
-	printf("this class: index: %d, name: ", this_index);
+	auto [this_index, super_reader] =
+		this_reader.read_and_get_super_class_reader();
+	printf("this class: index: %hu, name: ", (uint16) this_index);
 	auto this_name = utf8(_class(this_index).name_index);
-	fwrite(this_name.data(), 1, this_name.size(), stdout);
+	fwrite(this_name.elements_ptr(), 1, this_name.size(), stdout);
 	printf("\n");
 
-	auto [read_interfaces, super_index] = read_super();
+	auto [super_index, interfaces_reader] =
+		super_reader.read_and_get_interfaces_reader();
 	printf("super class: ");
 	auto super_name = utf8(_class(super_index).name_index);
-	fwrite(super_name.data(), 1, super_name.size(), stdout);
+	fwrite(super_name.elements_ptr(), 1, super_name.size(), stdout);
 	printf("\n");
 
 	printf("interfaces:\n");
-	auto read_fields = read_interfaces([&](auto name_index) {
-		printf("\t");
-		auto interface_name = utf8(_class(name_index).name_index);
-		fwrite(interface_name.data(), 1, interface_name.size(), stdout);
-		printf("\n");
-	});
+	auto fiels_reader =
+		interfaces_reader.read_and_get_fields_reader([&](auto name_index) {
+			printf("\t");
+			auto interface_name = utf8(_class(name_index).name_index);
+			fwrite(
+				interface_name.elements_ptr(), 1, interface_name.size(), stdout
+			);
+			printf("\n");
+		}
+	);
 
 	printf("fields:\n");
-	auto read_methods = read_fields([&](auto field_reader) {
-		auto [name_index_reader, access_flags] = field_reader();
-		printf("\taccess flags: 0x%.4x, name: ", access_flags);
+	auto methods_reader =
+	fiels_reader.read_and_get_methods_reader([&](auto field_reader) {
+		auto [access_flags, name_index_reader] =
+			field_reader.read_access_flags_and_get_name_index_reader();
+		printf("\taccess flags: 0x%.4x, name: ", (uint16) access_flags);
 
-		auto [descriptor_index_reader, name_index] = name_index_reader();
+		auto [name_index, descriptor_index_reader] =
+			name_index_reader.read_and_get_descriptor_index_reader();
 		auto name = utf8(name_index);
-		fwrite(name.data(), 1, name.size(), stdout);
+		fwrite(name.elements_ptr(), 1, name.size(), stdout);
 
-		auto [read_attributes, descriptor_index] {
-			descriptor_index_reader()
-		};
+		auto [descriptor_index, attributes_reader] =
+			descriptor_index_reader.read_and_get_attributes_reader();
 
 		printf(", descriptor: ");
 		auto descriptor = utf8(descriptor_index);
-		fwrite(descriptor.data(), 1, descriptor.size(), stdout);
+		fwrite(descriptor.elements_ptr(), 1, descriptor.size(), stdout);
 		printf("\n");
 
-		return read_attributes(
+		return attributes_reader.read_and_get_advanced_iterator(
 			utf8,
 			[&](auto) {
 
@@ -176,24 +185,30 @@ int main(int argc, const char** argv) {
 	});
 
 	printf("methods:\n");
-	[[maybe_unused]] auto _ = read_methods([&](auto method_reader) {
-		auto [read_name_index, access_flags] = method_reader();
-		printf("\taccess flags: 0x%.4x, name: ", access_flags);
+	[[maybe_unused]] auto _ =
+	methods_reader.read_and_get_attributes_reader([&](auto method_reader) {
+		auto [access_flags, name_index_reader] =
+			method_reader.read_access_flags_and_get_name_index_reader();
+		printf("\taccess flags: 0x%.4x, name: ", (uint16) access_flags);
 
-		auto [read_descriptor_index, name_index] = read_name_index();
+		auto [name_index, descriptor_index_reader] =
+			name_index_reader.read_and_get_descriptor_index_reader();
 		auto name = utf8(name_index);
-		fwrite(name.data(), 1, name.size(), stdout);
+		fwrite(name.elements_ptr(), 1, name.size(), stdout);
 
-		auto [read_attributes, descriptor_index] = read_descriptor_index();
+		auto [descriptor_index, attributes_reader] =
+			descriptor_index_reader.read_and_get_attributes_reader();
 		auto descriptor = utf8(descriptor_index);
 		printf(", descriptor: ");
-		fwrite(descriptor.begin(), 1, descriptor.size(), stdout);
+		fwrite(descriptor.elements_ptr(), 1, descriptor.size(), stdout);
 		printf("\n");
 
-		return read_attributes(
+		return attributes_reader.read_and_get_advanced_iterator(
 			utf8,
 			[&]<typename AttributeReader>(AttributeReader x) {
-				if constexpr (AttributeReader::type == attribute::type::code) {
+				if constexpr (
+					AttributeReader::attribute_type == attribute::type::code
+				) {
 					read_code_attribute(x);
 				}
 			}
