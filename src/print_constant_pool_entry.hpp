@@ -94,18 +94,27 @@ static void print_constant_pool_entry(
 
 		using enum constant::method_handle::behavior_kind;
 		switch (x.kind) {
-			case get_field:          name = "get field";          break;
-			case get_static:         name = "get static";         break;
-			case put_field:          name = "put field";          break;
-			case put_static:         name = "put static";         break;
+			case get_field:
+				name = c_string{ "get field" };          break;
+			case get_static:
+				name = c_string{ "get static" };         break;
+			case put_field:
+				name = c_string{ "put field" };          break;
+			case put_static:
+				name = c_string{ "put static" };         break;
 
-			case invoke_virtual:     name = "invoke virtual";     break;
-			case new_invoke_special: name = "new invoke special"; break;
+			case invoke_virtual:
+				name = c_string{ "invoke virtual" };     break;
+			case new_invoke_special:
+				name = c_string{ "new invoke special" }; break;
 
-			case invoke_static:      name = "invoke static";      break;
-			case invoke_special:     name = "invoke special";     break;
+			case invoke_static:
+				name = c_string{ "invoke static" };      break;
+			case invoke_special:
+				name = c_string{ "invoke special" };     break;
 
-			case invoke_interface:   name = "invoke interface";   break;
+			case invoke_interface:
+				name = c_string{ "invoke interface" };   break;
 		}
 
 		fputs("method handle: reference kind = \"", stdout);
@@ -170,7 +179,6 @@ static void print_constant_pool_entry(
 		fputs("package: ", stdout);
 		print_utf8(x.name_index);
 	}
-	else if constexpr (same_as<Type, elements::none>) {}
 	else if constexpr (same_as<Type, constant::unknown>) {
 		printf("unknown tag: %d", x); abort();
 	}

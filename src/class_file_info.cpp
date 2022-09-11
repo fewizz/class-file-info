@@ -117,11 +117,12 @@ int main(int argc, const char** argv) {
 	entry_index = 0;
 
 	for(const_pool_entry& e : const_pool) {
+		++entry_index;
+		if(!e.has_value()) {
+			continue;
+		}
 		e.view([&]<typename Type>(Type x) {
-			++entry_index;
-			if constexpr (!same_as<Type, elements::none>) {
-				printf("\t[%u] ", (uint32) entry_index);
-			}
+			printf("\t[%u] ", (uint32) entry_index);
 			print_constant_pool_entry(x, entry);
 		});
 	}

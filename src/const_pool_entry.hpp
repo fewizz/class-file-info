@@ -1,11 +1,9 @@
 #pragma once
 
-#include <elements/one_of.hpp>
-#include <elements/none.hpp>
+#include <optional.hpp>
 #include <class_file/constant.hpp>
 
-using const_pool_entry_base_type = elements::one_of<
-	elements::none,
+using const_pool_entry_base_type = optional<
 	class_file::constant::utf8,
 	class_file::constant::_int,
 	class_file::constant::_float,
@@ -30,7 +28,5 @@ struct const_pool_entry : const_pool_entry_base_type {
 	using base_type = const_pool_entry_base_type;
 
 	using base_type::base_type;
-
-	const_pool_entry() : base_type{ elements::none{} } {}
 
 };

@@ -16,7 +16,8 @@ static void print_instruction(Type x) {
 
 	if constexpr (same_as<Type, nop>) fputs("nop", stdout);
 
-	else if constexpr (same_as<Type, a_const_null>) fputs("a_const_null", stdout);
+	else if constexpr (same_as<Type, a_const_null>)
+		fputs("a_const_null", stdout);
 	else if constexpr (same_as<Type, i_const_m1>) fputs("i_const_m1", stdout);
 	else if constexpr (same_as<Type, i_const_0>) fputs("i_const_0", stdout);
 	else if constexpr (same_as<Type, i_const_1>) fputs("i_const_1", stdout);
