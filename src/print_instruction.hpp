@@ -1,408 +1,466 @@
 #pragma once
 
-#include "abort.hpp"
+#include "./print.hpp"
+
 #include <class_file/attribute/code/instruction.hpp>
 #include <on_scope_exit.hpp>
 #include <loop_action.hpp>
-#include <stdio.h>
+#include <c_string.hpp>
+#include <number.hpp>
+#include <array.hpp>
+
+#include <posix/abort.hpp>
 
 template<typename Type>
 static void print_instruction(Type x) {
+
 	using namespace class_file::attribute::code::instruction;
 
 	on_scope_exit new_line_on_scope_exit{[](){
-		putchar('\n');
+		print("\n");
 	}};
 
-	if constexpr (same_as<Type, nop>) fputs("nop", stdout);
+	if constexpr (same_as<Type, nop>) {
+		print("nop");
+	}
 
 	else if constexpr (same_as<Type, a_const_null>)
-		fputs("a_const_null", stdout);
-	else if constexpr (same_as<Type, i_const_m1>) fputs("i_const_m1", stdout);
-	else if constexpr (same_as<Type, i_const_0>) fputs("i_const_0", stdout);
-	else if constexpr (same_as<Type, i_const_1>) fputs("i_const_1", stdout);
-	else if constexpr (same_as<Type, i_const_2>) fputs("i_const_2", stdout);
-	else if constexpr (same_as<Type, i_const_3>) fputs("i_const_3", stdout);
-	else if constexpr (same_as<Type, i_const_4>) fputs("i_const_4", stdout);
-	else if constexpr (same_as<Type, i_const_5>) fputs("i_const_5", stdout);
-	else if constexpr (same_as<Type, l_const_0>) fputs("l_const_0", stdout);
-	else if constexpr (same_as<Type, l_const_1>) fputs("l_const_1", stdout);
-	else if constexpr (same_as<Type, f_const_0>) fputs("f_const_0", stdout);
-	else if constexpr (same_as<Type, f_const_1>) fputs("f_const_1", stdout);
-	else if constexpr (same_as<Type, f_const_2>) fputs("f_const_2", stdout);
-	else if constexpr (same_as<Type, d_const_0>) fputs("d_const_0", stdout);
-	else if constexpr (same_as<Type, d_const_1>) fputs("d_const_1", stdout);
+		print("a_const_null");
+	else if constexpr (same_as<Type, i_const_m1>) print("i_const_m1");
+	else if constexpr (same_as<Type, i_const_0>) print("i_const_0");
+	else if constexpr (same_as<Type, i_const_1>) print("i_const_1");
+	else if constexpr (same_as<Type, i_const_2>) print("i_const_2");
+	else if constexpr (same_as<Type, i_const_3>) print("i_const_3");
+	else if constexpr (same_as<Type, i_const_4>) print("i_const_4");
+	else if constexpr (same_as<Type, i_const_5>) print("i_const_5");
+	else if constexpr (same_as<Type, l_const_0>) print("l_const_0");
+	else if constexpr (same_as<Type, l_const_1>) print("l_const_1");
+	else if constexpr (same_as<Type, f_const_0>) print("f_const_0");
+	else if constexpr (same_as<Type, f_const_1>) print("f_const_1");
+	else if constexpr (same_as<Type, f_const_2>) print("f_const_2");
+	else if constexpr (same_as<Type, d_const_0>) print("d_const_0");
+	else if constexpr (same_as<Type, d_const_1>) print("d_const_1");
 
 	else if constexpr (same_as<Type, bi_push>) {
-		fputs("bi_push ", stdout);
-		printf("%hhu", x.value);
+		print("bi_push ");
+		print(x.value);
 	}
 	else if constexpr (same_as<Type, si_push>) {
-		fputs("si_push ", stdout);
-		printf("%hu", x.value);
+		print("si_push ");
+		print(x.value);
 	}
 
 	else if constexpr (same_as<Type, ldc>) {
-		fputs("ldc ", stdout);
-		printf("%hhu", (uint8) x.index);
+		print("ldc ");
+		print((uint8) x.index);
 	}
 	else if constexpr (same_as<Type, ldc_w>) {
-		fputs("ldc_w ", stdout);
-		printf("%hu", (uint16) x.index);
+		print("ldc_w ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, ldc_2_w>) {
-		fputs("ldc_2_w ", stdout);
-		printf("%hu", (uint16) x.index);
+		print("ldc_2_w ");
+		print((uint16) x.index);
 	}
 
 	else if constexpr (same_as<Type, i_load>) {
-		fputs("i_load ", stdout);
-		printf("%hhu", x.index);
+		print("i_load ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, l_load>) {
-		fputs("l_load ", stdout);
-		printf("%hhu", x.index);
+		print("l_load ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, f_load>) {
-		fputs("f_load ", stdout);
-		printf("%hhu", x.index);
+		print("f_load ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, d_load>) {
-		fputs("d_load ", stdout);
-		printf("%hhu", x.index);
+		print("d_load ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, a_load>) {
-		fputs("a_load ", stdout);
-		printf("%hhu", x.index);
+		print("a_load ");
+		print(x.index);
 	}
-	else if constexpr (same_as<Type, i_load_0>) fputs("i_load_0", stdout);
-	else if constexpr (same_as<Type, i_load_1>) fputs("i_load_1", stdout);
-	else if constexpr (same_as<Type, i_load_2>) fputs("i_load_2", stdout);
-	else if constexpr (same_as<Type, i_load_3>) fputs("i_load_3", stdout);
-	else if constexpr (same_as<Type, l_load_0>) fputs("l_load_0", stdout);
-	else if constexpr (same_as<Type, l_load_1>) fputs("l_load_1", stdout);
-	else if constexpr (same_as<Type, l_load_2>) fputs("l_load_2", stdout);
-	else if constexpr (same_as<Type, l_load_3>) fputs("l_load_3", stdout);
-	else if constexpr (same_as<Type, f_load_0>) fputs("f_load_0", stdout);
-	else if constexpr (same_as<Type, f_load_1>) fputs("f_load_1", stdout);
-	else if constexpr (same_as<Type, f_load_2>) fputs("f_load_2", stdout);
-	else if constexpr (same_as<Type, f_load_3>) fputs("f_load_3", stdout);
-	else if constexpr (same_as<Type, d_load_0>) fputs("d_load_0", stdout);
-	else if constexpr (same_as<Type, d_load_1>) fputs("d_load_1", stdout);
-	else if constexpr (same_as<Type, d_load_2>) fputs("d_load_2", stdout);
-	else if constexpr (same_as<Type, d_load_3>) fputs("d_load_3", stdout);
-	else if constexpr (same_as<Type, a_load_0>) fputs("a_load_0", stdout);
-	else if constexpr (same_as<Type, a_load_1>) fputs("a_load_1", stdout);
-	else if constexpr (same_as<Type, a_load_2>) fputs("a_load_2", stdout);
-	else if constexpr (same_as<Type, a_load_3>) fputs("a_load_3", stdout);
-	else if constexpr (same_as<Type, i_a_load>) fputs("i_a_load", stdout);
-	else if constexpr (same_as<Type, l_a_load>) fputs("l_a_load", stdout);
-	else if constexpr (same_as<Type, f_a_load>) fputs("f_a_load", stdout);
-	else if constexpr (same_as<Type, d_a_load>) fputs("d_a_load", stdout);
-	else if constexpr (same_as<Type, a_a_load>) fputs("a_a_load", stdout);
-	else if constexpr (same_as<Type, b_a_load>) fputs("b_a_load", stdout);
-	else if constexpr (same_as<Type, c_a_load>) fputs("c_a_load", stdout);
-	else if constexpr (same_as<Type, s_a_load>) fputs("s_a_load", stdout);
+	else if constexpr (same_as<Type, i_load_0>) print("i_load_0");
+	else if constexpr (same_as<Type, i_load_1>) print("i_load_1");
+	else if constexpr (same_as<Type, i_load_2>) print("i_load_2");
+	else if constexpr (same_as<Type, i_load_3>) print("i_load_3");
+	else if constexpr (same_as<Type, l_load_0>) print("l_load_0");
+	else if constexpr (same_as<Type, l_load_1>) print("l_load_1");
+	else if constexpr (same_as<Type, l_load_2>) print("l_load_2");
+	else if constexpr (same_as<Type, l_load_3>) print("l_load_3");
+	else if constexpr (same_as<Type, f_load_0>) print("f_load_0");
+	else if constexpr (same_as<Type, f_load_1>) print("f_load_1");
+	else if constexpr (same_as<Type, f_load_2>) print("f_load_2");
+	else if constexpr (same_as<Type, f_load_3>) print("f_load_3");
+	else if constexpr (same_as<Type, d_load_0>) print("d_load_0");
+	else if constexpr (same_as<Type, d_load_1>) print("d_load_1");
+	else if constexpr (same_as<Type, d_load_2>) print("d_load_2");
+	else if constexpr (same_as<Type, d_load_3>) print("d_load_3");
+	else if constexpr (same_as<Type, a_load_0>) print("a_load_0");
+	else if constexpr (same_as<Type, a_load_1>) print("a_load_1");
+	else if constexpr (same_as<Type, a_load_2>) print("a_load_2");
+	else if constexpr (same_as<Type, a_load_3>) print("a_load_3");
+	else if constexpr (same_as<Type, i_a_load>) print("i_a_load");
+	else if constexpr (same_as<Type, l_a_load>) print("l_a_load");
+	else if constexpr (same_as<Type, f_a_load>) print("f_a_load");
+	else if constexpr (same_as<Type, d_a_load>) print("d_a_load");
+	else if constexpr (same_as<Type, a_a_load>) print("a_a_load");
+	else if constexpr (same_as<Type, b_a_load>) print("b_a_load");
+	else if constexpr (same_as<Type, c_a_load>) print("c_a_load");
+	else if constexpr (same_as<Type, s_a_load>) print("s_a_load");
 
 	else if constexpr (same_as<Type, i_store>) {
-		fputs("i_store ", stdout);
-		printf("%hhu", x.index);
+		print("i_store ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, l_store>) {
-		fputs("l_store ", stdout);
-		printf("%hhu", x.index);
+		print("l_store ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, f_store>) {
-		fputs("f_store ", stdout);
-		printf("%hhu", x.index);
+		print("f_store ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, d_store>) {
-		fputs("d_store ", stdout);
-		printf("%hhu", x.index);
+		print("d_store ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, a_store>) {
-		fputs("a_store ", stdout);
-		printf("%hhu", x.index);
+		print("a_store ");
+		print(x.index);
 	}
-	else if constexpr (same_as<Type, i_store_0>) fputs("i_store_0", stdout);
-	else if constexpr (same_as<Type, i_store_1>) fputs("i_store_1", stdout);
-	else if constexpr (same_as<Type, i_store_2>) fputs("i_store_2", stdout);
-	else if constexpr (same_as<Type, i_store_3>) fputs("i_store_3", stdout);
-	else if constexpr (same_as<Type, l_store_0>) fputs("l_store_0", stdout);
-	else if constexpr (same_as<Type, l_store_1>) fputs("l_store_1", stdout);
-	else if constexpr (same_as<Type, l_store_2>) fputs("l_store_2", stdout);
-	else if constexpr (same_as<Type, l_store_3>) fputs("l_store_3", stdout);
-	else if constexpr (same_as<Type, f_store_0>) fputs("f_store_0", stdout);
-	else if constexpr (same_as<Type, f_store_1>) fputs("f_store_1", stdout);
-	else if constexpr (same_as<Type, f_store_2>) fputs("f_store_2", stdout);
-	else if constexpr (same_as<Type, f_store_3>) fputs("f_store_3", stdout);
-	else if constexpr (same_as<Type, d_store_0>) fputs("d_store_0", stdout);
-	else if constexpr (same_as<Type, d_store_1>) fputs("d_store_1", stdout);
-	else if constexpr (same_as<Type, d_store_2>) fputs("d_store_2", stdout);
-	else if constexpr (same_as<Type, d_store_3>) fputs("d_store_3", stdout);
-	else if constexpr (same_as<Type, a_store_0>) fputs("a_store_0", stdout);
-	else if constexpr (same_as<Type, a_store_1>) fputs("a_store_1", stdout);
-	else if constexpr (same_as<Type, a_store_2>) fputs("a_store_2", stdout);
-	else if constexpr (same_as<Type, a_store_3>) fputs("a_store_3", stdout);
-	else if constexpr (same_as<Type, i_a_store>) fputs("i_a_store", stdout);
-	else if constexpr (same_as<Type, l_a_store>) fputs("l_a_store", stdout);
-	else if constexpr (same_as<Type, f_a_store>) fputs("f_a_store", stdout);
-	else if constexpr (same_as<Type, d_a_store>) fputs("d_a_store", stdout);
-	else if constexpr (same_as<Type, a_a_store>) fputs("a_a_store", stdout);
-	else if constexpr (same_as<Type, b_a_store>) fputs("b_a_store", stdout);
-	else if constexpr (same_as<Type, c_a_store>) fputs("c_a_store", stdout);
-	else if constexpr (same_as<Type, s_a_store>) fputs("s_a_store", stdout);
+	else if constexpr (same_as<Type, i_store_0>) print("i_store_0");
+	else if constexpr (same_as<Type, i_store_1>) print("i_store_1");
+	else if constexpr (same_as<Type, i_store_2>) print("i_store_2");
+	else if constexpr (same_as<Type, i_store_3>) print("i_store_3");
+	else if constexpr (same_as<Type, l_store_0>) print("l_store_0");
+	else if constexpr (same_as<Type, l_store_1>) print("l_store_1");
+	else if constexpr (same_as<Type, l_store_2>) print("l_store_2");
+	else if constexpr (same_as<Type, l_store_3>) print("l_store_3");
+	else if constexpr (same_as<Type, f_store_0>) print("f_store_0");
+	else if constexpr (same_as<Type, f_store_1>) print("f_store_1");
+	else if constexpr (same_as<Type, f_store_2>) print("f_store_2");
+	else if constexpr (same_as<Type, f_store_3>) print("f_store_3");
+	else if constexpr (same_as<Type, d_store_0>) print("d_store_0");
+	else if constexpr (same_as<Type, d_store_1>) print("d_store_1");
+	else if constexpr (same_as<Type, d_store_2>) print("d_store_2");
+	else if constexpr (same_as<Type, d_store_3>) print("d_store_3");
+	else if constexpr (same_as<Type, a_store_0>) print("a_store_0");
+	else if constexpr (same_as<Type, a_store_1>) print("a_store_1");
+	else if constexpr (same_as<Type, a_store_2>) print("a_store_2");
+	else if constexpr (same_as<Type, a_store_3>) print("a_store_3");
+	else if constexpr (same_as<Type, i_a_store>) print("i_a_store");
+	else if constexpr (same_as<Type, l_a_store>) print("l_a_store");
+	else if constexpr (same_as<Type, f_a_store>) print("f_a_store");
+	else if constexpr (same_as<Type, d_a_store>) print("d_a_store");
+	else if constexpr (same_as<Type, a_a_store>) print("a_a_store");
+	else if constexpr (same_as<Type, b_a_store>) print("b_a_store");
+	else if constexpr (same_as<Type, c_a_store>) print("c_a_store");
+	else if constexpr (same_as<Type, s_a_store>) print("s_a_store");
 
-	else if constexpr (same_as<Type, pop>) fputs("pop", stdout);
-	else if constexpr (same_as<Type, pop_2>) fputs("pop_2", stdout);
-	else if constexpr (same_as<Type, dup>) fputs("dup", stdout);
-	else if constexpr (same_as<Type, dup_x1>) fputs("dup_x1", stdout);
-	else if constexpr (same_as<Type, dup_x2>) fputs("dup_x2", stdout);
-	else if constexpr (same_as<Type, dup_2>) fputs("dup_2", stdout);
-	else if constexpr (same_as<Type, dup_2_x1>) fputs("dup_2_x1", stdout);
-	else if constexpr (same_as<Type, dup_2_x2>) fputs("dup_2_x2", stdout);
-	else if constexpr (same_as<Type, swap>) fputs("swap", stdout);
+	else if constexpr (same_as<Type, pop>) print("pop");
+	else if constexpr (same_as<Type, pop_2>) print("pop_2");
+	else if constexpr (same_as<Type, dup>) print("dup");
+	else if constexpr (same_as<Type, dup_x1>) print("dup_x1");
+	else if constexpr (same_as<Type, dup_x2>) print("dup_x2");
+	else if constexpr (same_as<Type, dup_2>) print("dup_2");
+	else if constexpr (same_as<Type, dup_2_x1>) print("dup_2_x1");
+	else if constexpr (same_as<Type, dup_2_x2>) print("dup_2_x2");
+	else if constexpr (same_as<Type, swap>) print("swap");
 
-	else if constexpr (same_as<Type, i_add>) fputs("i_add", stdout);
-	else if constexpr (same_as<Type, l_add>) fputs("l_add", stdout);
-	else if constexpr (same_as<Type, f_add>) fputs("f_add", stdout);
-	else if constexpr (same_as<Type, d_add>) fputs("d_add", stdout);
-	else if constexpr (same_as<Type, i_sub>) fputs("i_sub", stdout);
-	else if constexpr (same_as<Type, l_sub>) fputs("l_sub", stdout);
-	else if constexpr (same_as<Type, f_sub>) fputs("f_sub", stdout);
-	else if constexpr (same_as<Type, d_sub>) fputs("d_sub", stdout);
-	else if constexpr (same_as<Type, i_mul>) fputs("i_mul", stdout);
-	else if constexpr (same_as<Type, l_mul>) fputs("l_mul", stdout);
-	else if constexpr (same_as<Type, f_mul>) fputs("f_mul", stdout);
-	else if constexpr (same_as<Type, d_mul>) fputs("d_mul", stdout);
-	else if constexpr (same_as<Type, i_div>) fputs("i_div", stdout);
-	else if constexpr (same_as<Type, l_div>) fputs("l_div", stdout);
-	else if constexpr (same_as<Type, f_div>) fputs("f_div", stdout);
-	else if constexpr (same_as<Type, d_div>) fputs("d_div", stdout);
-	else if constexpr (same_as<Type, i_rem>) fputs("i_rem", stdout);
-	else if constexpr (same_as<Type, l_rem>) fputs("l_rem", stdout);
-	else if constexpr (same_as<Type, f_rem>) fputs("f_rem", stdout);
-	else if constexpr (same_as<Type, d_rem>) fputs("d_rem", stdout);
-	else if constexpr (same_as<Type, i_neg>) fputs("i_neg", stdout);
-	else if constexpr (same_as<Type, l_neg>) fputs("l_neg", stdout);
-	else if constexpr (same_as<Type, f_neg>) fputs("f_neg", stdout);
-	else if constexpr (same_as<Type, d_neg>) fputs("d_neg", stdout);
-	else if constexpr (same_as<Type, i_sh_l>) fputs("i_sh_l", stdout);
-	else if constexpr (same_as<Type, l_sh_l>) fputs("l_sh_l", stdout);
-	else if constexpr (same_as<Type, i_sh_r>) fputs("i_sh_r", stdout);
-	else if constexpr (same_as<Type, l_sh_r>) fputs("l_sh_r", stdout);
-	else if constexpr (same_as<Type, i_u_sh_r>) fputs("i_u_sh_r", stdout);
-	else if constexpr (same_as<Type, l_u_sh_r>) fputs("l_u_sh_r", stdout);
-	else if constexpr (same_as<Type, i_and>) fputs("i_and", stdout);
-	else if constexpr (same_as<Type, l_and>) fputs("l_and", stdout);
-	else if constexpr (same_as<Type, i_or>) fputs("i_or", stdout);
-	else if constexpr (same_as<Type, l_or>) fputs("l_or", stdout);
-	else if constexpr (same_as<Type, i_xor>) fputs("i_xor", stdout);
-	else if constexpr (same_as<Type, l_xor>) fputs("l_xor", stdout);
+	else if constexpr (same_as<Type, i_add>) print("i_add");
+	else if constexpr (same_as<Type, l_add>) print("l_add");
+	else if constexpr (same_as<Type, f_add>) print("f_add");
+	else if constexpr (same_as<Type, d_add>) print("d_add");
+	else if constexpr (same_as<Type, i_sub>) print("i_sub");
+	else if constexpr (same_as<Type, l_sub>) print("l_sub");
+	else if constexpr (same_as<Type, f_sub>) print("f_sub");
+	else if constexpr (same_as<Type, d_sub>) print("d_sub");
+	else if constexpr (same_as<Type, i_mul>) print("i_mul");
+	else if constexpr (same_as<Type, l_mul>) print("l_mul");
+	else if constexpr (same_as<Type, f_mul>) print("f_mul");
+	else if constexpr (same_as<Type, d_mul>) print("d_mul");
+	else if constexpr (same_as<Type, i_div>) print("i_div");
+	else if constexpr (same_as<Type, l_div>) print("l_div");
+	else if constexpr (same_as<Type, f_div>) print("f_div");
+	else if constexpr (same_as<Type, d_div>) print("d_div");
+	else if constexpr (same_as<Type, i_rem>) print("i_rem");
+	else if constexpr (same_as<Type, l_rem>) print("l_rem");
+	else if constexpr (same_as<Type, f_rem>) print("f_rem");
+	else if constexpr (same_as<Type, d_rem>) print("d_rem");
+	else if constexpr (same_as<Type, i_neg>) print("i_neg");
+	else if constexpr (same_as<Type, l_neg>) print("l_neg");
+	else if constexpr (same_as<Type, f_neg>) print("f_neg");
+	else if constexpr (same_as<Type, d_neg>) print("d_neg");
+	else if constexpr (same_as<Type, i_sh_l>) print("i_sh_l");
+	else if constexpr (same_as<Type, l_sh_l>) print("l_sh_l");
+	else if constexpr (same_as<Type, i_sh_r>) print("i_sh_r");
+	else if constexpr (same_as<Type, l_sh_r>) print("l_sh_r");
+	else if constexpr (same_as<Type, i_u_sh_r>) print("i_u_sh_r");
+	else if constexpr (same_as<Type, l_u_sh_r>) print("l_u_sh_r");
+	else if constexpr (same_as<Type, i_and>) print("i_and");
+	else if constexpr (same_as<Type, l_and>) print("l_and");
+	else if constexpr (same_as<Type, i_or>) print("i_or");
+	else if constexpr (same_as<Type, l_or>) print("l_or");
+	else if constexpr (same_as<Type, i_xor>) print("i_xor");
+	else if constexpr (same_as<Type, l_xor>) print("l_xor");
 	else if constexpr (same_as<Type, i_inc>) {
-		printf("iinc ", stdout);
-		printf("%hhu, %hhd", x.index, x.value);
+		print("iinc ");
+		print(x.index);
+		print(", ");
+		print(x.value);
 	}
-	else if constexpr (same_as<Type, i_to_l>) fputs("i_to_l", stdout);
-	else if constexpr (same_as<Type, i_to_f>) fputs("i_to_f", stdout);
-	else if constexpr (same_as<Type, i_to_d>) fputs("i_to_d", stdout);
-	else if constexpr (same_as<Type, l_to_i>) fputs("l_to_i", stdout);
-	else if constexpr (same_as<Type, l_to_f>) fputs("l_to_f", stdout);
-	else if constexpr (same_as<Type, l_to_d>) fputs("l_to_d", stdout);
-	else if constexpr (same_as<Type, f_to_i>) fputs("f_to_i", stdout);
-	else if constexpr (same_as<Type, f_to_l>) fputs("f_to_l", stdout);
-	else if constexpr (same_as<Type, f_to_d>) fputs("f_to_d", stdout);
-	else if constexpr (same_as<Type, d_to_i>) fputs("d_to_i", stdout);
-	else if constexpr (same_as<Type, d_to_l>) fputs("d_to_l", stdout);
-	else if constexpr (same_as<Type, d_to_f>) fputs("d_to_f", stdout);
-	else if constexpr (same_as<Type, i_to_b>) fputs("i_to_b", stdout);
-	else if constexpr (same_as<Type, i_to_c>) fputs("i_to_c", stdout);
-	else if constexpr (same_as<Type, i_to_s>) fputs("i_to_s", stdout);
+	else if constexpr (same_as<Type, i_to_l>) print("i_to_l");
+	else if constexpr (same_as<Type, i_to_f>) print("i_to_f");
+	else if constexpr (same_as<Type, i_to_d>) print("i_to_d");
+	else if constexpr (same_as<Type, l_to_i>) print("l_to_i");
+	else if constexpr (same_as<Type, l_to_f>) print("l_to_f");
+	else if constexpr (same_as<Type, l_to_d>) print("l_to_d");
+	else if constexpr (same_as<Type, f_to_i>) print("f_to_i");
+	else if constexpr (same_as<Type, f_to_l>) print("f_to_l");
+	else if constexpr (same_as<Type, f_to_d>) print("f_to_d");
+	else if constexpr (same_as<Type, d_to_i>) print("d_to_i");
+	else if constexpr (same_as<Type, d_to_l>) print("d_to_l");
+	else if constexpr (same_as<Type, d_to_f>) print("d_to_f");
+	else if constexpr (same_as<Type, i_to_b>) print("i_to_b");
+	else if constexpr (same_as<Type, i_to_c>) print("i_to_c");
+	else if constexpr (same_as<Type, i_to_s>) print("i_to_s");
 
-	else if constexpr (same_as<Type, l_cmp>) fputs("l_cmp", stdout);
+	else if constexpr (same_as<Type, l_cmp>) print("l_cmp");
 
-	else if constexpr (same_as<Type, f_cmp_l>) fputs("f_cmp_l", stdout);
-	else if constexpr (same_as<Type, f_cmp_g>) fputs("f_cmp_g", stdout);
-	else if constexpr (same_as<Type, d_cmp_l>) fputs("d_cmp_l", stdout);
-	else if constexpr (same_as<Type, d_cmp_g>) fputs("d_cmp_g", stdout);
+	else if constexpr (same_as<Type, f_cmp_l>) print("f_cmp_l");
+	else if constexpr (same_as<Type, f_cmp_g>) print("f_cmp_g");
+	else if constexpr (same_as<Type, d_cmp_l>) print("d_cmp_l");
+	else if constexpr (same_as<Type, d_cmp_g>) print("d_cmp_g");
 
 	else if constexpr (same_as<Type, if_eq>) {
-		fputs("if_eq ", stdout);
-		printf("%hd", x.branch);
+		print("if_eq ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_ne>) {
-		fputs("if_ne ", stdout);
-		printf("%hd", x.branch);
+		print("if_ne ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_lt>) {
-		fputs("if_lt ", stdout);
-		printf("%hd", x.branch);
+		print("if_lt ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_ge>) {
-		fputs("if_ge ", stdout);
-		printf("%hd", x.branch);
+		print("if_ge ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_gt>) {
-		fputs("if_gt ", stdout);
-		printf("%hd", x.branch);
+		print("if_gt ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_le>) {
-		fputs("if_le ", stdout);
-		printf("%hd", x.branch);
+		print("if_le ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_i_cmp_eq>) {
-		printf("if_i_cmp_eq %hd", x.branch);
+		print("if_i_cmp_eq ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_i_cmp_ne>) {
-		printf("if_i_cmp_ne %hd", x.branch);
+		print("if_i_cmp_ne ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_i_cmp_lt>) {
-		printf("if_i_cmp_lt %hd", x.branch);
+		print("if_i_cmp_lt ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_i_cmp_ge>) {
-		printf("if_i_cmp_ge %hd", x.branch);
+		print("if_i_cmp_ge ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_i_cmp_gt>) {
-		printf("if_i_cmp_gt %hd", x.branch);
+		print("if_i_cmp_gt ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_i_cmp_le>) {
-		printf("if_i_cmp_le %hd", x.branch);
+		print("if_i_cmp_le ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_a_cmp_eq>) {
-		printf("if_a_cmp_eq %hd", x.branch);
+		print("if_a_cmp_eq ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_a_cmp_ne>) {
-		printf("if_a_cmp_ne %hd", x.branch);
+		print("if_a_cmp_ne ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, go_to>) {
-		printf("goto %hd", x.branch);
+		print("goto ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, jmp_sr>) {
-		printf("jmp_sr %hd", x.branch);
+		print("jmp_sr ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, return_sr>) {
-		printf("return_sr %hhu", x.index);
+		print("return_sr ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, table_switch>) {
-		printf("table_switch %d", x._default);
+		print("table_switch ");
+		print(x._default);
 		for(auto p : x.offsets) {
-			printf(" %d", p);
+			print(" ");
+			print(p);
 		}
 	}
 	else if constexpr (same_as<Type, lookup_switch>) {
-		printf("lookup_switch %d", x._default);
+		print("lookup_switch ");
+		print(x._default);
 		for(auto p : x.pairs) {
-			printf(" %d:%d", p.match, p.offset);
+			print(" ");
+			print(p.match);
+			print(":");
+			print(p.offset);
 		}
 	}
 	else if constexpr (same_as<Type, i_return>) {
-		fputs("i_return", stdout);
+		print("i_return");
 	}
 	else if constexpr (same_as<Type, l_return>) {
-		fputs("l_return", stdout);
+		print("l_return");
 	}
 	else if constexpr (same_as<Type, f_return>) {
-		fputs("f_return", stdout);
+		print("f_return");
 	}
 	else if constexpr (same_as<Type, d_return>) {
-		fputs("d_return", stdout);
+		print("d_return");
 	}
 	else if constexpr (same_as<Type, a_return>) {
-		fputs("a_return", stdout);
+		print("a_return");
 	}
 	else if constexpr (same_as<Type, _return>) {
-		fputs("return", stdout);
+		print("return");
 	}
 
 	else if constexpr (same_as<Type, get_static>) {
-		printf("get_static %hu", (uint16) x.index);
+		print("get_static ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, put_static>) {
-		printf("put_static %hu", (uint16) x.index);
+		print("put_static ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, get_field>) {
-		printf("get_field %hu", (uint16) x.index);
+		print("get_field ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, put_field>) {
-		printf("put_field %hu", (uint16) x.index);
+		print("put_field ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_virtual>) {
-		printf("invoke_virtual %hu", (uint16) x.index);
+		print("invoke_virtual ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_special>) {
-		printf("invoke_special %hu", (uint16) x.index);
+		print("invoke_special ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_static>) {
-		printf("invoke_static %hu", (uint16) x.index);
+		print("invoke_static ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, invoke_interface>) {
-		printf("invoke_interface %hu %hhu", (uint16) x.index, x.count);
+		print("invoke_interface ");
+		print((uint16) x.index);
+		print(x.count);
 	}
 	else if constexpr (same_as<Type, invoke_dynamic>) {
-		printf("invoked_ynamic %hu", (uint16) x.index);
+		print("invoked_ynamic ");
+		print((uint16) x.index);
 	}
-	else if constexpr (same_as<Type, _new>) printf("new %hu", (uint16) x.index);
+	else if constexpr (same_as<Type, _new>) {
+		print("new ");
+		print((uint16) x.index);
+	}
 	else if constexpr (same_as<Type, new_array>) {
-		printf("new_array %hhu", x.type);
+		print("new_array ");
+		print((uint8) x.type);
 	}
 	else if constexpr (same_as<Type, a_new_array>) {
-		printf("a_new_array %hu", (uint16) x.index);
+		print("a_new_array ");
+		print((uint16) x.index);
 	}
-	else if constexpr (same_as<Type, array_length>) printf("array_length");
-	else if constexpr (same_as<Type, a_throw>) printf("a_throw");
+	else if constexpr (same_as<Type, array_length>) print("array_length");
+	else if constexpr (same_as<Type, a_throw>) print("a_throw");
 	else if constexpr (same_as<Type, check_cast>) {
-		printf("check_cast %hu", (uint16) x.index);
+		print("check_cast ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, instance_of>) {
-		printf("instance_of %hu", (uint16) x.index);
+		print("instance_of ");
+		print((uint16) x.index);
 	}
 	else if constexpr (same_as<Type, monitor_enter>) {
-		fputs("monitor_enter", stdout);
+		print("monitor_enter");
 	}
 	else if constexpr (same_as<Type, monitor_exit>) {
-		fputs("monitor_exit", stdout);
+		print("monitor_exit");
 	}
 	else if constexpr (same_as<Type, wide_format_1>) {
-		fputs("wide ", stdout);
+		print("wide ");
 
 		switch(x.other_code) {
-			case i_load::code: fputs("i_load", stdout);
-			case f_load::code: fputs("f_load", stdout);
-			case a_load::code: fputs("a_load", stdout);
-			case l_load::code: fputs("l_load", stdout);
-			case d_load::code: fputs("d_load", stdout);
+			case i_load::code: print("i_load");
+			case f_load::code: print("f_load");
+			case a_load::code: print("a_load");
+			case l_load::code: print("l_load");
+			case d_load::code: print("d_load");
 
-			case i_store::code: fputs("i_store", stdout);
-			case f_store::code: fputs("f_store", stdout);
-			case a_store::code: fputs("a_store", stdout);
-			case l_store::code: fputs("l_store", stdout);
-			case d_store::code: fputs("d_store", stdout);
+			case i_store::code: print("i_store");
+			case f_store::code: print("f_store");
+			case a_store::code: print("a_store");
+			case l_store::code: print("l_store");
+			case d_store::code: print("d_store");
 
-			case return_sr::code: fputs("return_sr", stdout);
+			case return_sr::code: print("return_sr");
 		}
 
-		fprintf(stdout, " %hu", x.index);
+		print(" ");
+		print(x.index);
 	}
 	else if constexpr (same_as<Type, wide_format_2>) {
-		fprintf(stdout, "wide %hu %hu", x.index, x.value);
+		print("wide ");
+		print(x.index);
+		print(" ");
+		print(x.value);
 	}
 	else if constexpr (same_as<Type, multi_new_array>) {
-		fprintf(stdout, "multi_new_array %hu %hhu", x.index, x.dimensions);
+		print("multi_new_array ");
+		print(x.index);
+		print(" ");
+		print(x.dimensions);
 	}
 	else if constexpr (same_as<Type, if_null>) {
-		printf("if_null %hu", x.branch);
+		print("if_null ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, if_non_null>) {
-		printf("if_non_null %hu", x.branch);
+		print("if_non_null ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, goto_w>) {
-		fprintf(stdout, "goto_w %u", x.branch);
+		print("goto_w ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, jmp_sr_w>) {
-		fprintf(stdout, "jmp_sr_w %u", x.branch);
+		print("jmp_sr_w ");
+		print(x.branch);
 	}
 	else if constexpr (same_as<Type, uint8>) {
-		printf("unknown instruction: %hhu\n", x);
+		posix::std_err().write_from(c_string{ "unknown instruction: "});
+		for_each_digit_in_number(x, 10, [](auto digit) {
+			posix::std_err().write_from(array{ digit + '0' });
+		});
 		abort();
 	}
 	else {
