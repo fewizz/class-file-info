@@ -1,6 +1,6 @@
-#include "const_pool_entry.hpp"
-#include "print_instruction.hpp"
-#include "print_constant_pool_entry.hpp"
+#include "./const_pool_entry.hpp"
+#include "./print_instruction.hpp"
+#include "./print_constant_pool_entry.hpp"
 
 #include <class_file/reader.hpp>
 #include <on_scope_exit.hpp>
@@ -8,9 +8,6 @@
 
 #include <posix/memory.hpp>
 #include <posix/default_error_handler.cpp>
-
-extern "C" void* __cdecl malloc(nuint size);
-extern "C" void  __cdecl free(void* ptr);
 
 template<typename Iterator>
 void read_code_attribute(

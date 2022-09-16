@@ -1,9 +1,10 @@
 #pragma once
 
-#include <posix/io.hpp>
 #include <array.hpp>
 #include <list.hpp>
 #include <range.hpp>
+
+#include <posix/io.hpp>
 
 inline struct buffered_print_t {
 	list<array<storage<char>, 65536>> buff{};

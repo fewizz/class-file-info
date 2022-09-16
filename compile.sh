@@ -5,9 +5,6 @@ mkdir -p ${root}/build
 clang++ \
 	-std=c++20 \
 	-Wall -Wextra \
-	-O3 \
-	-march=native \
-	-static \
 	-nostdinc++ \
 	-I ${root}/include/ \
 	-I ${root}/../core/include \

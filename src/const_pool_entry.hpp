@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional.hpp>
+
 #include <class_file/constant.hpp>
 
 using const_pool_entry_base_type = optional<

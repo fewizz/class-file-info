@@ -4,9 +4,10 @@
 #include "./const_pool_entry.hpp"
 
 #include <class_file/constant.hpp>
-#include <absolute.hpp>
 
+#include <absolute.hpp>
 #include <c_string.hpp>
+
 #include <posix/abort.hpp>
 
 template<typename Type>
