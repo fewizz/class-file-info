@@ -50,7 +50,7 @@ int main(int argc, const char** argv) {
 
 	using namespace class_file;
 
-	reader reader{ data.iterator() };
+	reader reader{ (char*) data.iterator() };
 	auto [is_there_any_magic, version_reader] =
 		reader.check_for_magic_and_get_version_reader();
 
