@@ -4,6 +4,7 @@
 #include "./const_pool_entry.hpp"
 
 #include <class_file/constant.hpp>
+#include <absolute.hpp>
 
 #include <c_string.hpp>
 #include <posix/abort.hpp>
@@ -55,7 +56,9 @@ static void print_constant_pool_entry(
 	}
 	else if constexpr (same_as<Type, constant::_float>) {
 		print("float: ");
-		//print(x.value); TODO
+		print((int32)x.value);
+		print(".");
+		print((nuint)(absolute(x.value - (int32)x.value) * 4.0F));
 	}
 	else if constexpr (same_as<Type, constant::_long>) {
 		print("long: ");
@@ -63,7 +66,9 @@ static void print_constant_pool_entry(
 	}
 	else if constexpr (same_as<Type, constant::_double>) {
 		print("double: ");
-		//print(x.value); TODO
+		print((int64)x.value);
+		print(".");
+		print((nuint)(absolute(x.value - (int64)x.value) * 8.0F));
 	}
 	else if constexpr (same_as<Type, constant::_class>) {
 		print("class: ");
