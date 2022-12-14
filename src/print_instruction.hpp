@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./print.hpp"
+#include "./const_pool.hpp"
 
 #include <class_file/attribute/code/instruction.hpp>
 
@@ -13,13 +14,72 @@
 #include <posix/abort.hpp>
 
 template<typename Type>
-static void print_instruction(Type x) {
+static void print_instruction(Type x, const_pool& const_pool) {
 
-	using namespace class_file::attribute::code::instruction;
+	using namespace class_file;
+	using namespace attribute::code::instruction;
 
 	on_scope_exit new_line_on_scope_exit{[](){
 		print("\n");
 	}};
+
+	auto print_method_ref =
+	[&]<same_as_any<
+		constant::method_ref_index,
+		constant::interface_method_ref_index
+	> IndexType>(
+		 IndexType index
+	) {
+		auto method_ref = const_pool[index];
+		{
+			constant::_class c = [&]() {
+				if constexpr(
+					same_as<IndexType, constant::method_ref_index>
+				) { return const_pool[method_ref.class_index]; }
+				if constexpr(
+					same_as<IndexType, constant::interface_method_ref_index>
+				) { return const_pool[method_ref.interface_index]; }
+			}();
+			constant::utf8 class_name = const_pool[c.name_index];
+			print(class_name);
+		}
+		print(".");
+		{
+			constant::name_and_type nat
+				= const_pool[method_ref.name_and_type_index];
+			constant::utf8 name = const_pool[nat.name_index];
+			constant::utf8 desc = const_pool[nat.descriptor_index];
+			print(name);
+			print(desc);
+		}
+	};
+
+	auto print_field_ref =
+	[&](constant::field_ref_index index) {
+		auto method_ref = const_pool[index];
+		{
+			constant::_class c = const_pool[method_ref.class_index];
+			constant::utf8 class_name = const_pool[c.name_index];
+			print(class_name);
+		}
+		print(".");
+		{
+			constant::name_and_type nat
+				= const_pool[method_ref.name_and_type_index];
+			constant::utf8 name = const_pool[nat.name_index];
+			print(name);
+			print(" ");
+			constant::utf8 desc = const_pool[nat.descriptor_index];
+			print(desc);
+		}
+	};
+
+	auto print_class_name =
+	[&](constant::class_index index) {
+		constant::_class c = const_pool[index];
+		constant::utf8 name = const_pool[c.name_index];
+		print(name);
+	};
 
 	if constexpr (same_as<Type, nop>) {
 		print("nop");
@@ -344,36 +404,36 @@ static void print_instruction(Type x) {
 
 	else if constexpr (same_as<Type, get_static>) {
 		print("get_static ");
-		print((uint16) x.index);
+		print_field_ref(x.index);
 	}
 	else if constexpr (same_as<Type, put_static>) {
 		print("put_static ");
-		print((uint16) x.index);
+		print_field_ref(x.index);
 	}
 	else if constexpr (same_as<Type, get_field>) {
 		print("get_field ");
-		print((uint16) x.index);
+		print_field_ref(x.index);
 	}
 	else if constexpr (same_as<Type, put_field>) {
 		print("put_field ");
-		print((uint16) x.index);
+		print_field_ref(x.index);
 	}
 	else if constexpr (same_as<Type, invoke_virtual>) {
 		print("invoke_virtual ");
-		print((uint16) x.index);
+		print_method_ref(x.index);
 	}
 	else if constexpr (same_as<Type, invoke_special>) {
 		print("invoke_special ");
-		print((uint16) x.index);
+		print_method_ref(x.index);
 	}
 	else if constexpr (same_as<Type, invoke_static>) {
 		print("invoke_static ");
-		print((uint16) x.index);
+		print_method_ref(x.index);
 	}
 	else if constexpr (same_as<Type, invoke_interface>) {
 		print("invoke_interface ");
 		print((uint16) x.index);
-		print(x.count);
+		print_method_ref(x.index);
 	}
 	else if constexpr (same_as<Type, invoke_dynamic>) {
 		print("invoked_ynamic ");
@@ -381,7 +441,7 @@ static void print_instruction(Type x) {
 	}
 	else if constexpr (same_as<Type, _new>) {
 		print("new ");
-		print((uint16) x.index);
+		print_class_name(x.index);
 	}
 	else if constexpr (same_as<Type, new_array>) {
 		print("new_array ");
@@ -389,17 +449,17 @@ static void print_instruction(Type x) {
 	}
 	else if constexpr (same_as<Type, a_new_array>) {
 		print("a_new_array ");
-		print((uint16) x.index);
+		print_class_name(x.index);
 	}
 	else if constexpr (same_as<Type, array_length>) print("array_length");
 	else if constexpr (same_as<Type, a_throw>) print("a_throw");
 	else if constexpr (same_as<Type, check_cast>) {
 		print("check_cast ");
-		print((uint16) x.index);
+		print_class_name(x.index);
 	}
 	else if constexpr (same_as<Type, instance_of>) {
 		print("instance_of ");
-		print((uint16) x.index);
+		print_class_name(x.index);
 	}
 	else if constexpr (same_as<Type, monitor_enter>) {
 		print("monitor_enter");
@@ -458,9 +518,9 @@ static void print_instruction(Type x) {
 		print(x.branch);
 	}
 	else if constexpr (same_as<Type, uint8>) {
-		posix::std_err().write_from(c_string{ "unknown instruction: "});
-		for_each_digit_in_number(x, 10, [](auto digit) {
-			posix::std_err().write_from(array{ digit + '0' });
+		posix::std_err.write_from(c_string{ "unknown instruction: "});
+		number{ x }.for_each_digit(10, [](auto digit) {
+			posix::std_err.write_from(array{ digit + '0' });
 		});
 		abort();
 	}

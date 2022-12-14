@@ -1,48 +1,47 @@
 #pragma once
 
 #include "./print.hpp"
-#include "./const_pool_entry.hpp"
+#include "./const_pool.hpp"
 
 #include <class_file/constant.hpp>
 
-#include <absolute.hpp>
 #include <c_string.hpp>
+#include <number.hpp>
 
 #include <posix/abort.hpp>
 
 template<typename Type>
 static void print_constant_pool_entry(
-	Type x, auto entry_map
+	Type x, const_pool const_pool
 ) {
 	using namespace class_file;
 
-	auto print_utf8 = [&](uint16 index) {
-		constant::utf8 u = entry_map(index).template get<constant::utf8>();
+	auto print_utf8 = [&](constant::utf8_index index) {
+		constant::utf8 u = const_pool[index];
 		print("\"");
 		print(u);
 		print("\"[");
-		print(index);
+		print((uint16) index);
 		print("]");
 	};
 
-	auto print_class = [&](uint16 index) {
-		constant::_class c = entry_map(index).template get<constant::_class>();
+	auto print_class = [&](constant::class_index index) {
+		constant::_class c = const_pool[index];
 		print("class = { ");
 		print_utf8(c.name_index);
 		print(" }[");
-		print(index);
+		print((uint16) index);
 		print("]");
 	};
 
-	auto print_nat = [&](uint16 index) {
-		constant::name_and_type n =
-			entry_map(index).template get<constant::name_and_type>();
+	auto print_nat = [&](constant::name_and_type_index index) {
+		constant::name_and_type n = const_pool[index];
 		print("name and type = { ");
 		print_utf8(n.name_index);
 		print(", ");
 		print_utf8(n.descriptor_index);
 		print(" }[");
-		print(index);
+		print((uint16) index);
 		print("]");
 	};
 
@@ -57,9 +56,7 @@ static void print_constant_pool_entry(
 	}
 	else if constexpr (same_as<Type, constant::_float>) {
 		print("float: ");
-		print((int32)x.value);
-		print(".");
-		print((nuint)(absolute(x.value - (int32)x.value) * 4.0F));
+		print(x.value);
 	}
 	else if constexpr (same_as<Type, constant::_long>) {
 		print("long: ");
@@ -67,9 +64,7 @@ static void print_constant_pool_entry(
 	}
 	else if constexpr (same_as<Type, constant::_double>) {
 		print("double: ");
-		print((int64)x.value);
-		print(".");
-		print((nuint)(absolute(x.value - (int64)x.value) * 8.0F));
+		print(x.value);
 	}
 	else if constexpr (same_as<Type, constant::_class>) {
 		print("class: ");
@@ -136,28 +131,28 @@ static void print_constant_pool_entry(
 		print(name);
 		print("\", ");
 
-		auto e = entry_map(x.reference_index);
+		const_pool_entry e = const_pool.entry(x.reference_index);
 
 		constant::class_index         class_index;
 		constant::name_and_type_index nat_index;
 
 		if((uint8)x.kind >= 1 && (uint8)x.kind <= 4) {
 			constant::field_ref fr =
-				e.template get<constant::field_ref>();
+				e.template get_same_as<constant::field_ref>();
 			print("field ref");
 			class_index = fr.class_index;
 			nat_index = fr.name_and_type_index;
 		}
-		else if(e.template is<constant::method_ref>()) {
+		else if(e.template is_same_as<constant::method_ref>()) {
 			constant::method_ref mr =
-				e.template get<constant::method_ref>();
+				e.template get_same_as<constant::method_ref>();
 			print("method ref");
 			class_index = mr.class_index;
 			nat_index = mr.name_and_type_index;
 		}
 		else {
 			constant::interface_method_ref imr =
-				e.template get<constant::interface_method_ref>();
+				e.template get_same_as<constant::interface_method_ref>();
 			print("interface method ref");
 			class_index = imr.interface_index;
 			nat_index = imr.name_and_type_index;

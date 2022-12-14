@@ -1,4 +1,4 @@
-#include "./const_pool_entry.hpp"
+#include "./const_pool.hpp"
 #include "./print_instruction.hpp"
 #include "./print_constant_pool_entry.hpp"
 
@@ -11,35 +11,48 @@
 
 template<typename Iterator>
 void read_code_attribute(
-	class_file::attribute::code::reader<Iterator> max_stack_reader
+	class_file::attribute::code::reader<Iterator> max_stack_reader,
+	const_pool& const_pool
 ) {
-	auto [max_locals_reader, max_stack] = max_stack_reader();
+	auto [max_stack, max_locals_reader]
+		= max_stack_reader.read_and_get_max_locals_reader();
 	print("max stack: ");
 	print(max_stack);
 	print("\n");
 
-	auto [code_reader, max_locals] = max_locals_reader();
+	auto [max_locals, code_reader]
+		= max_locals_reader.read_and_get_code_reader();
 	print("max locals: ");
 	print(max_locals);
 	print("\n");
 
-	code_reader([]<typename Type>(Type x, auto) {
-		print_instruction(x);
+	auto it_begin = code_reader.read_as_span().iterator();
+	auto prev_it = it_begin;
+	code_reader.read_and_get_exception_table_reader(
+	[&]<typename Type>(Type x, auto it) {
+		print("[");
+		print((nuint)prev_it - (nuint)it_begin);
+		prev_it = it;
+		print("] ");
+		print_instruction(x, const_pool);
 		return loop_action::next;
 	});
 }
 
 int main(int argc, const char** argv) {
 	if(argc != 2) {
-		posix::std_err().write_from(
+		posix::std_err.write_from(
 			c_string{"usage: class_info.cpp <path to class file>"}
 		);
 		return 1;
 	}
 
-	posix::own_file file = posix::open_file(
+	body<posix::file> file = posix::open_file(
 		c_string{ argv[1] },
-		posix::file_access_modes{ posix::file_access_mode::read }
+		posix::file_access_modes {
+			posix::file_access_mode::read,
+			posix::file_access_mode::binary
+		}
 	);
 	auto size = file->set_offset_to_end();
 	file->set_offset(0);
@@ -50,65 +63,61 @@ int main(int argc, const char** argv) {
 
 	using namespace class_file;
 
-	reader reader{ (char*) data.iterator() };
+	reader magic_reader{ (char*) data.iterator() };
 	auto [is_there_any_magic, version_reader] =
-		reader.check_for_magic_and_get_version_reader();
+		magic_reader.read_and_check_and_get_version_reader();
 
 	if(!is_there_any_magic) {
-		posix::std_err().write_from(c_string{ "no magic here..." });
+		posix::std_err.write_from(c_string{ "no magic here..." });
 		return 1;
 	}
 
-	auto [version0, constant_pool_reader] =
+	auto [version, constant_pool_reader] =
 		version_reader.read_and_get_constant_pool_reader();
-	class_file::version version = version0;
 	print("version: ");
 	print(version.major);
 	print(".");
 	print(version.minor);
 	print("\n");
 
-	uint16 constant_pool_size = constant_pool_reader.entries_count();
-	const_pool_entry const_pool[constant_pool_size];
+	uint16 const_pool_size = constant_pool_reader.read_count();
+	storage<const_pool_entry> const_pool_storages[const_pool_size];
+	list const_pool_list{ span{ const_pool_storages, const_pool_size } };
 
-	nuint entry_index = 0;
 	auto access_flags_reader =
 		constant_pool_reader.read_and_get_access_flags_reader(
 			[&]<typename Type>(Type x) {
 				if constexpr(
-					!same_as<Type, constant::unknown> &&
-					!same_as<Type, constant::skip>
+					same_as<Type, constant::unknown> ||
+					same_as<Type, constant::skip>
 				) {
-					const_pool[entry_index] = x;
+					const_pool_list.emplace_back(const_pool_entry{});
 				}
-				++entry_index;
+				else {
+					const_pool_list.emplace_back(x);
+				}
+				
 			}
 		);
 
-	auto entry = [&](uint16 index) { return const_pool[index - 1]; };
-	auto _class = [&](uint16 index) {
-		return entry(index).get<constant::_class>();
-	};
-	auto utf8 = [&](uint16 index) {
-		return entry(index).get<constant::utf8>();
-	};
-
 	print("constant pool:\n");
 
-	entry_index = 0;
+	const_pool const_pool {
+		(const_pool_entry*) const_pool_storages, const_pool_size
+	};
 
-	for(const_pool_entry& e : const_pool) {
-		++entry_index;
+	const_pool.for_each_indexed([&](const_pool_entry e, uint16 index) {
 		if(!e.has_value()) {
-			continue;
+			return;
 		}
 		e.view([&]<typename Type>(Type x) {
 			print("\t[");
-			print((uint32) entry_index);
+			print((uint32) index + 1);
 			print("] ");
-			print_constant_pool_entry(x, entry);
+			print_constant_pool_entry(x, const_pool);
 		});
-	}
+	});
+
 
 	auto [access_flags, this_reader] =
 		access_flags_reader.read_and_get_this_class_reader();
@@ -118,33 +127,35 @@ int main(int argc, const char** argv) {
 
 	auto [this_index, super_reader] =
 		this_reader.read_and_get_super_class_reader();
-	print("this class: index: ");
-	print((uint16) this_index);
-	print(", name: ");
-	auto this_name = utf8(_class(this_index).name_index);
+	print("this class:");
+	auto this_name = const_pool[const_pool[this_index].name_index];
 	print(this_name);
+	print("["); print((uint16) this_index); print("]");
 	print("\n");
 
 	auto [super_index, interfaces_reader] =
 		super_reader.read_and_get_interfaces_reader();
 	print("super class: ");
-	auto super_name = utf8(_class(super_index).name_index);
+	auto super_name
+		= const_pool[const_pool[super_index].name_index];
 	print(super_name);
+	print("["); print((uint16) super_index); print("]");
 	print("\n");
 
 	print("interfaces:\n");
-	auto fiels_reader =
-		interfaces_reader.read_and_get_fields_reader([&](auto name_index) {
+	auto fields_reader =
+		interfaces_reader
+		.read_and_get_fields_reader([&](constant::interface_index index) {
 			print("\t");
-			auto interface_name = utf8(_class(name_index).name_index);
-			print(interface_name);
+			constant::utf8 i_name = const_pool[const_pool[index].name_index];
+			print(i_name);
 			print("\n");
 		}
 	);
 
 	print("fields:\n");
 	auto methods_reader =
-	fiels_reader.read_and_get_methods_reader([&](auto field_reader) {
+	fields_reader.read_and_get_methods_reader([&](auto field_reader) {
 		auto [access_flags, name_index_reader] =
 			field_reader.read_access_flags_and_get_name_index_reader();
 		print("\taccess flags: ");
@@ -153,19 +164,19 @@ int main(int argc, const char** argv) {
 
 		auto [name_index, descriptor_index_reader] =
 			name_index_reader.read_and_get_descriptor_index_reader();
-		auto name = utf8(name_index);
+		constant::utf8 name = const_pool[name_index];
 		print(name);
 
 		auto [descriptor_index, attributes_reader] =
 			descriptor_index_reader.read_and_get_attributes_reader();
 
 		print(", descriptor: ");
-		auto descriptor = utf8(descriptor_index);
+		constant::utf8 descriptor = const_pool[descriptor_index];
 		print(descriptor);
 		print("\n");
 
 		return attributes_reader.read_and_get_advanced_iterator(
-			utf8,
+			[&](constant::utf8_index index) { return const_pool[index]; },
 			[&](auto) {
 
 			}
@@ -183,23 +194,23 @@ int main(int argc, const char** argv) {
 
 		auto [name_index, descriptor_index_reader] =
 			name_index_reader.read_and_get_descriptor_index_reader();
-		auto name = utf8(name_index);
+		auto name = const_pool[name_index];
 		print(name);
 
 		auto [descriptor_index, attributes_reader] =
 			descriptor_index_reader.read_and_get_attributes_reader();
-		auto descriptor = utf8(descriptor_index);
+		auto descriptor = const_pool[descriptor_index];
 		print(", descriptor: ");
 		print(descriptor);
 		print("\n");
 
 		return attributes_reader.read_and_get_advanced_iterator(
-			utf8,
+			[&](constant::utf8_index index) { return const_pool[index]; },
 			[&]<typename AttributeReader>(AttributeReader x) {
 				if constexpr (
 					AttributeReader::attribute_type == attribute::type::code
 				) {
-					read_code_attribute(x);
+					read_code_attribute(x, const_pool);
 				}
 			}
 		);
