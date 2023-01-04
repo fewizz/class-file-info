@@ -509,17 +509,17 @@ static void print_instruction(Type x, const_pool& const_pool) {
 		print("if_non_null ");
 		print(x.branch);
 	}
-	else if constexpr (same_as<Type, goto_w>) {
-		print("goto_w ");
+	else if constexpr (same_as<Type, go_to_w>) {
+		print("go_to_w ");
 		print(x.branch);
 	}
 	else if constexpr (same_as<Type, jmp_sr_w>) {
 		print("jmp_sr_w ");
 		print(x.branch);
 	}
-	else if constexpr (same_as<Type, uint8>) {
+	else if constexpr (same_as<Type, unknown>) {
 		posix::std_err.write_from(c_string{ "unknown instruction: "});
-		number{ x }.for_each_digit(10, [](auto digit) {
+		number{ x.code }.for_each_digit(10, [](auto digit) {
 			posix::std_err.write_from(array{ digit + '0' });
 		});
 		abort();

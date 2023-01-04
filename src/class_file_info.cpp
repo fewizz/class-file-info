@@ -26,17 +26,22 @@ void read_code_attribute(
 	print(max_locals);
 	print("\n");
 
-	auto it_begin = code_reader.read_as_span().iterator();
-	auto prev_it = it_begin;
-	code_reader.read_and_get_exception_table_reader(
-	[&]<typename Type>(Type x, auto it) {
+	auto code_span = code_reader.read_as_span();
+	auto begin = code_span.iterator();
+	auto end = code_span.sentinel();
+	auto current = begin;
+
+	while(current < end) {
 		print("[");
-		print((nuint)prev_it - (nuint)it_begin);
-		prev_it = it;
+		print((nuint)current - (nuint)begin);
 		print("] ");
-		print_instruction(x, const_pool);
-		return loop_action::next;
-	});
+
+		class_file::attribute::code::instruction::read(
+			current,
+			begin,
+			[&](auto x) { print_instruction(x, const_pool); }
+		);
+	}
 }
 
 int main(int argc, const char** argv) {
