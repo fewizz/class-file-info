@@ -18,6 +18,7 @@ clang++ \
 	-I ${root}/../core/include \
 	-I ${root}/../class-file/include \
 	-I ${root}/../posix-wrapper/include \
+	-I ${root}/../print/include \
 	-o ${root}/build/class-file-info \
 	${additional_args[@]} \
 	${root}/src/class_file_info.cpp
