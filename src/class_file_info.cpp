@@ -7,15 +7,15 @@
 #include <c_string.hpp>
 
 #include <posix/memory.hpp>
-#include <posix/default_error_handler.cpp>
+#include <posix/default_unhandled.cpp>
 
 template<typename Iterator>
 void read_code_attribute(
-	class_file::attribute::code::reader<Iterator> max_stack_reader,
+	class_file::attribute::code::reader<Iterator> reader,
 	const_pool& const_pool
 ) {
 	auto [max_stack, max_locals_reader]
-		= max_stack_reader.read_and_get_max_locals_reader();
+		= reader.read_max_stack_and_get_max_locals_reader();
 	print::out("max stack: ", max_stack, "\n");
 
 	auto [max_locals, code_reader]
@@ -33,7 +33,10 @@ void read_code_attribute(
 		class_file::attribute::code::instruction::read(
 			current,
 			begin,
-			[&](auto x) { print_instruction(x, const_pool); }
+			[&](auto x) {
+				print_instruction{ const_pool }(x);
+				print::out("\n");
+			}
 		);
 	}
 }
@@ -53,18 +56,15 @@ int main(int argc, const char** argv) {
 			posix::file_access_mode::binary
 		}
 	);
-	auto size = file->set_offset_to_end();
-	file->set_offset(0);
-	posix::memory_for_range_of<uint8> data {
-		posix::allocate_memory_for<uint8>(size)
-	};
+	auto size = file->get_size();
+	posix::memory<> data { posix::allocate<uint8>(size) };
 	file->read_to(data);
 
 	using namespace class_file;
 
-	reader magic_reader{ (char*) data.iterator() };
+	reader magic_reader{ data.as_span().iterator() };
 	auto [is_there_any_magic, version_reader] =
-		magic_reader.read_and_check_and_get_version_reader();
+		magic_reader.read_and_check_magic_and_get_version_reader();
 
 	if(!is_there_any_magic) {
 		posix::std_err.write_from(c_string{ "no magic here..." });
@@ -105,7 +105,7 @@ int main(int argc, const char** argv) {
 		if(!e.has_value()) {
 			return;
 		}
-		e.view([&]<typename Type>(Type x) {
+		e.view([&](auto x) {
 			print::out("\t[", (uint32) index + 1, "] ");
 			print_constant_pool_entry(x, const_pool);
 		});
@@ -132,7 +132,7 @@ int main(int argc, const char** argv) {
 	print::out("interfaces:\n");
 	auto fields_reader =
 		interfaces_reader
-		.read_and_get_fields_reader([&](constant::interface_index index) {
+		.read_and_get_fields_reader([&](constant::class_index index) {
 			constant::utf8 i_name = const_pool[const_pool[index].name_index];
 			print::out("\t", i_name, "\n");
 		}

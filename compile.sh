@@ -14,11 +14,14 @@ clang++ \
 	-std=c++20 \
 	-Wall -Wextra \
 	-nostdinc++ \
+	-g \
+	-O0 \
 	-I ${root}/include/ \
 	-I ${root}/../core/include \
 	-I ${root}/../class-file/include \
 	-I ${root}/../posix-wrapper/include \
 	-I ${root}/../print/include \
+	-I ${root}/../encoding/include \
 	-o ${root}/build/class-file-info \
 	${additional_args[@]} \
 	${root}/src/class_file_info.cpp

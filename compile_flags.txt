@@ -13,7 +13,8 @@
 -I../class-file/include
 -I../posix-wrapper/include
 -I../print/include
+-I../encoding/include
 
 -fmodules
--Xclang -fimplicit-module-maps
--Xclang -fprebuilt-module-path=./build
+-fimplicit-module-maps
+-fprebuilt-module-path=./build

@@ -76,7 +76,7 @@ static void print_constant_pool_entry(
 	}
 	else if constexpr (same_as<Type, constant::interface_method_ref>) {
 		print::out("interface method ref: ");
-		print_class(x.interface_index);
+		print_class(x.class_index);
 		print::out(", ");
 		print_nat(x.name_and_type_index);
 	}
@@ -139,7 +139,7 @@ static void print_constant_pool_entry(
 			constant::interface_method_ref imr =
 				e.template get_same_as<constant::interface_method_ref>();
 			print::out("interface method ref");
-			class_index = imr.interface_index;
+			class_index = imr.class_index;
 			nat_index = imr.name_and_type_index;
 		}
 		print::out(" = { ");
