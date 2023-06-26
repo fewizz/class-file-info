@@ -247,10 +247,11 @@ struct print_instruction {
 	void operator () (go_to x) { print::out("goto ", x.branch); }
 	void operator () (jmp_sr x) { print::out("jmp_sr ", x.branch); }
 	void operator () (return_sr x) { print::out("return_sr ", x.index); }
-	void operator () (table_switch x) {
+	void operator () (table_switch x, auto offsets_input_stream) {
 		print::out("table_switch ", x._default);
-		for(auto p : x.offsets) {
-			print::out(" ", p);
+		while(x.offsets_count > 0) {
+			print::out(" ", read<table_switch::offset>(offsets_input_stream));
+			--x.offsets_count;
 		}
 	}
 	void operator () (lookup_switch x) {
