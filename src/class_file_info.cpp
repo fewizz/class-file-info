@@ -32,10 +32,9 @@ void read_code_attribute(
 
 		class_file::attribute::code::instruction::read(
 			current,
-			begin,
 			[&](auto x) {
-				print_instruction{ const_pool }(x);
-				print::out("\n");
+				on_scope_exit print_new_line{ []{ print::out("\n"); }};
+				return print_instruction{ const_pool, begin }(x);
 			}
 		);
 	}
@@ -75,7 +74,7 @@ int main(int argc, const char** argv) {
 		version_reader.read_and_get_constant_pool_reader();
 	print::out("version: ", version.major, ".", version.minor, "\n");
 
-	uint16 const_pool_size = constant_pool_reader.read_count();
+	uint16 const_pool_size = constant_pool_reader.get_count();
 	storage<const_pool_entry> const_pool_storages[const_pool_size];
 	list const_pool_list{ span{ const_pool_storages, const_pool_size } };
 

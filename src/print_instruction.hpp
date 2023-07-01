@@ -18,8 +18,8 @@ using namespace class_file;
 using namespace class_file::attribute::code::instruction;
 
 struct print_instruction {
-
 	const_pool& const_pool;
+	uint8* beginning;
 
 	template<
 		same_as_any<
@@ -247,25 +247,69 @@ struct print_instruction {
 	void operator () (go_to x) { print::out("goto ", x.branch); }
 	void operator () (jmp_sr x) { print::out("jmp_sr ", x.branch); }
 	void operator () (return_sr x) { print::out("return_sr ", x.index); }
-	void operator () (table_switch x, auto offsets_input_stream) {
-		print::out("table_switch ", x._default);
-		while(x.offsets_count > 0) {
-			print::out(" ", read<table_switch::offset>(offsets_input_stream));
-			--x.offsets_count;
-		}
+	template <typename IS>
+	uint8* operator () (table_switch::reader<IS> reader) {
+		auto info_reader = reader.align_and_get_info_reader([&](uint8* &is) {
+			nuint rem = (is - beginning) % 4;
+			if(rem > 0) {
+				is += 4 - rem;
+			}
+		});
+
+		auto [info, offsets_reader]
+			= info_reader.read_and_get_offsets_reader();
+
+		print::out("table_switch offsets: [");
+
+		on_scope_exit print_default {
+			[&]{ print::out(" ], default: ", info._default); }
+		};
+		nuint i = 0;
+		return offsets_reader.read_and_get_advanced_input_stream(
+			[&](table_switch::offset off) {
+				++i;
+				print::out((int32) off);
+				if(i < info.offsets_count()) {
+					print::out(", ");
+				}
+			}
+		);
 	}
-	void operator () (lookup_switch x) {
-		print::out("lookup_switch ", x._default);
-		for(auto p : x.pairs) {
-			print::out(" ", p.match, ":", p.offset);
-		}
+	template <typename IS>
+	uint8* operator () (lookup_switch::reader<IS> reader) {
+		auto info_reader = reader.align_and_get_info_reader([&](uint8* &is) {
+			nuint rem = (is - beginning) % 4;
+			if(rem > 0) {
+				is += 4 - rem;
+			}
+		});
+
+		auto [info, offsets_reader]
+			= info_reader.read_and_get_matches_and_offsets_reader();
+
+		print::out("lookup_switch matches and offsets: [ ");
+
+		on_scope_exit print_default {
+			[&]{ print::out(" ], default: ", info._default); }
+		};
+		nuint i = 0;
+
+		return offsets_reader.read_and_get_advanced_input_stream(
+			[&](lookup_switch::match_and_offset pair) {
+				++i;
+				print::out(pair.match, ":", pair.offset);
+				if(i < info.matches_and_offsets_count()) {
+					print::out(", ");
+				}
+			}
+		);
 	}
 	void operator () (i_return) { print::out("i_return"); }
 	void operator () (l_return) { print::out("l_return"); }
 	void operator () (f_return) { print::out("f_return"); }
 	void operator () (d_return) { print::out("d_return"); }
 	void operator () (a_return) { print::out("a_return"); }
-	void operator () (_return) { print::out("return"); }
+	void operator () ( _return) { print::out("return"); }
 
 	void operator () (get_static x) {
 		print::out("get_static ");
@@ -368,7 +412,7 @@ struct print_instruction {
 		print::err("unknown instruction: ", x.code);
 		posix::abort();
 	}
-	void operator () (auto) {
+	/*void operator () (auto) {
 		posix::abort();
-	}
+	}*/
 };
